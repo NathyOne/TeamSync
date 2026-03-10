@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import AdminShell from './AdminShell'
 import { useAssignStockMutation, useGetProductsQuery, useGetUsersQuery } from '../services/api'
 
 function AssignStock({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
-  const navigate = useNavigate()
   const [productId, setProductId] = useState('')
   const [salespersonId, setSalespersonId] = useState('')
   const [quantity, setQuantity] = useState('')
@@ -32,15 +31,6 @@ function AssignStock({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
 
   const selectedProduct = products.find((product) => String(product.id) === String(productId))
   const selectedSalesUser = salesUsers.find((user) => String(user.id) === String(salespersonId))
-
-  const handleBackToDashboard = () => {
-    navigate('/admin')
-  }
-
-  const handleLogout = () => {
-    onLogout()
-    navigate('/login', { replace: true })
-  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -104,34 +94,17 @@ function AssignStock({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
   const isRefreshing = isProductsFetching || isUsersFetching
 
   return (
-    <div className={styles.dashboardPage}>
-      <div className='mx-auto max-w-4xl'>
-        <div
-          className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${styles.dashboardHeader}`}
-        >
-          <div>
-            <p className={`text-sm uppercase tracking-[0.28em] ${styles.eyebrow}`}>
-              TeamSync Dashboard
-            </p>
-            <h1 className='mt-2 text-3xl font-bold'>Assign Product to Sales</h1>
-            <p className={`mt-1 ${styles.dashboardSubtext}`}>
-              Allocate inventory to registered sales users.
-            </p>
-          </div>
-
-          <div className='flex flex-wrap gap-2'>
-            <button className={styles.utilityButton} onClick={handleBackToDashboard} type='button'>
-              Back to Admin
-            </button>
-            <button className={styles.utilityButton} onClick={onToggleTheme} type='button'>
-              {themeButtonLabel}
-            </button>
-            <button className={styles.utilityButton} onClick={handleLogout} type='button'>
-              Logout
-            </button>
-          </div>
-        </div>
-
+    <AdminShell
+      activeSection='assign-stock'
+      eyebrow='TeamSync Dashboard'
+      onLogout={onLogout}
+      onToggleTheme={onToggleTheme}
+      styles={styles}
+      subtitle='Allocate inventory to registered sales users.'
+      themeButtonLabel={themeButtonLabel}
+      title='Assign Product to Sales'
+    >
+      <div className='max-w-3xl'>
         <div className={`mt-8 ${styles.panelWrap} from-cyan-500/15 to-blue-500/20`}>
           <div className={styles.actionInner}>
             <form className='space-y-4' onSubmit={handleSubmit}>
@@ -226,7 +199,7 @@ function AssignStock({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
           </div>
         </div>
       </div>
-    </div>
+    </AdminShell>
   )
 }
 

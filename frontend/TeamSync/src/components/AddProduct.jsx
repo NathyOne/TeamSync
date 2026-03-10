@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import AdminShell from './AdminShell'
 import { useAddProductMutation } from '../services/api'
 
 function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
-  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState('')
+  const [price, setPrice] = useState('')
   const [formError, setFormError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [addProduct, { isLoading, error }] = useAddProductMutation()
@@ -17,6 +17,7 @@ function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
 
     const trimmedName = name.trim()
     const parsedQuantity = Number(quantity)
+    const parsedPrice = Number(price)
 
     if (!trimmedName) {
       setFormError('Product name is required.')
@@ -28,23 +29,20 @@ function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
       return
     }
 
+    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      setFormError('Price must be a number greater than or equal to 0.')
+      return
+    }
+
     try {
-      await addProduct({ name: trimmedName, quantity: parsedQuantity }).unwrap()
+      await addProduct({ name: trimmedName, quantity: parsedQuantity, price: parsedPrice }).unwrap()
       setSuccessMessage('Product added successfully.')
       setName('')
       setQuantity('')
+      setPrice('')
     } catch {
       // Error text is handled in the UI using RTK Query error object.
     }
-  }
-
-  const handleBackToDashboard = () => {
-    navigate('/admin')
-  }
-
-  const handleLogout = () => {
-    onLogout()
-    navigate('/login', { replace: true })
   }
 
   const apiErrorMessage =
@@ -53,32 +51,17 @@ function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
     'Failed to add product. Please try again.'
 
   return (
-    <div className={styles.dashboardPage}>
-      <div className='mx-auto max-w-4xl'>
-        <div
-          className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${styles.dashboardHeader}`}
-        >
-          <div>
-            <p className={`text-sm uppercase tracking-[0.28em] ${styles.eyebrow}`}> <span className='text-green-500'>TeamSync</span> Dashboard</p>
-            <h1 className='mt-2 text-3xl font-bold'>Add Product</h1>
-            <p className={`mt-1 ${styles.dashboardSubtext}`}>
-              Create a product with name and available quantity.
-            </p>
-          </div>
-
-          <div className='flex flex-wrap gap-2'>
-            <button className={styles.utilityButton} onClick={handleBackToDashboard} type='button'>
-              Back to Admin
-            </button>
-            <button className={styles.utilityButton} onClick={onToggleTheme} type='button'>
-              {themeButtonLabel}
-            </button>
-            <button className={styles.utilityButton} onClick={handleLogout} type='button'>
-              Logout
-            </button>
-          </div>
-        </div>
-
+    <AdminShell
+      activeSection='create-product'
+      eyebrow='TeamSync Dashboard'
+      onLogout={onLogout}
+      onToggleTheme={onToggleTheme}
+      styles={styles}
+      subtitle='Create a product with name and available quantity.'
+      themeButtonLabel={themeButtonLabel}
+      title='Add Product'
+    >
+      <div className='max-w-3xl'>
         <div className={`mt-8 ${styles.panelWrap} from-cyan-500/15 to-blue-500/20`}>
           <div className={styles.actionInner}>
             <form className='space-y-4' onSubmit={handleSubmit}>
@@ -113,6 +96,23 @@ function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
                 />
               </div>
 
+              <div>
+                <label className={styles.labelText} htmlFor='product-price'>
+                  Unit Price
+                </label>
+                <input
+                  className={styles.input}
+                  id='product-price'
+                  min='0'
+                  name='price'
+                  onChange={(event) => setPrice(event.target.value)}
+                  placeholder='e.g. 250.00'
+                  step='0.01'
+                  type='number'
+                  value={price}
+                />
+              </div>
+
               {formError ? <p className='text-sm text-rose-500'>{formError}</p> : null}
               {error ? <p className='text-sm text-rose-500'>{apiErrorMessage}</p> : null}
               {successMessage ? <p className='text-sm text-emerald-500'>{successMessage}</p> : null}
@@ -128,7 +128,7 @@ function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
           </div>
         </div>
       </div>
-    </div>
+    </AdminShell>
   )
 }
 

@@ -112,6 +112,10 @@ export const api = createApi({
       query: () => 'app/stock/deposits/',
       providesTags: ['Movement'],
     }),
+    getMyDeposits: builder.query({
+      query: () => 'app/stock/my-deposits/',
+      providesTags: ['Movement'],
+    }),
     getMyAssignments: builder.query({
       query: () => 'app/stock/my-assignments/',
       providesTags: ['Assignment'],
@@ -168,6 +172,7 @@ export const {
   useGetSalesAssignmentsQuery,
   useGetStockMovementsQuery,
   useGetSalesDepositsQuery,
+  useGetMyDepositsQuery,
   useGetMyAssignmentsQuery,
   useAssignStockMutation,
   useAcceptAssignmentMutation,

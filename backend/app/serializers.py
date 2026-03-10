@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
@@ -10,7 +11,7 @@ User = get_user_model()
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ["id", "name", "quantity"]
+        fields = ["id", "name", "quantity", "price", "reorder_threshold"]
 
 
 class SalesAssignmentSerializer(serializers.ModelSerializer):
@@ -232,6 +233,8 @@ class SalesDepositSerializer(serializers.ModelSerializer):
             "salesperson",
             "salesperson_email",
             "quantity",
+            "unit_price",
+            "total_amount",
             "bank_name",
             "bank_display",
             "created_at",
@@ -241,6 +244,8 @@ class SalesDepositSerializer(serializers.ModelSerializer):
             "product_name",
             "salesperson_email",
             "bank_display",
+            "unit_price",
+            "total_amount",
             "created_at",
         ]
 
@@ -251,6 +256,7 @@ class SubmitSaleSerializer(serializers.Serializer):
         queryset=Product.objects.all(),
         write_only=True,
     )
+    quantity = serializers.IntegerField(min_value=1, required=False)
     bank_name = serializers.ChoiceField(choices=SalesDeposit.BANK_CHOICES)
 
     def validate(self, attrs):
@@ -273,6 +279,12 @@ class SubmitSaleSerializer(serializers.Serializer):
                 {"product_id": "Assignment must be accepted before submitting sales."}
             )
 
+        sale_quantity = attrs.get("quantity")
+        if sale_quantity is not None and sale_quantity > assignment.quantity:
+            raise serializers.ValidationError(
+                {"quantity": "Sale quantity exceeds assigned stock."}
+            )
+
         attrs["salesperson"] = salesperson
         attrs["assignment"] = assignment
         return attrs
@@ -284,9 +296,11 @@ class SubmitSaleSerializer(serializers.Serializer):
             pk=validated_data["assignment"].pk
         )
         product = Product.objects.select_for_update().get(pk=assignment.product.pk)
-        quantity = assignment.quantity
+        quantity = validated_data.get("quantity") or assignment.quantity
+        unit_price = product.price or Decimal("0")
+        total_amount = unit_price * Decimal(quantity)
 
-        assignment.quantity = 0
+        assignment.quantity -= quantity
         assignment.total_sold += quantity
         assignment.save(update_fields=["quantity", "total_sold", "updated_at"])
 
@@ -294,6 +308,8 @@ class SubmitSaleSerializer(serializers.Serializer):
             product=product,
             salesperson=salesperson,
             quantity=quantity,
+            unit_price=unit_price,
+            total_amount=total_amount,
             bank_name=validated_data["bank_name"],
         )
         return deposit

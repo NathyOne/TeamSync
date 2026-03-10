@@ -44,6 +44,9 @@ function ProductList({ className = '', variant = 'card', title = 'Products' }) {
       <div className='grid gap-3 sm:grid-cols-2'>
         {availableProducts.map((product) => {
           const isSelected = String(product.id) === String(selectedProductId)
+          const isLowStock =
+            Number(product.reorder_threshold) >= 0 &&
+            Number(product.quantity) <= Number(product.reorder_threshold)
           return (
             <button
               key={product.id}
@@ -58,6 +61,7 @@ function ProductList({ className = '', variant = 'card', title = 'Products' }) {
               <div>
                 <p className='font-medium'>{product.name}</p>
                 <p className='text-xs text-gray-500'>Available: {product.quantity}</p>
+                {isLowStock ? <p className='text-xs text-amber-600'>Low stock</p> : null}
               </div>
               <span className='text-xs font-semibold uppercase text-gray-400'>View</span>
             </button>

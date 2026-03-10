@@ -8,7 +8,10 @@ from .views import (
     ReturnStockView,
     SalesAssignmentListView,
     SalesAssignmentSelfListView,
+    SalesAssignmentExportView,
     SalesDepositListView,
+    SalesDepositSelfListView,
+    SalesDepositExportView,
     SubmitSaleView,
     StockMovementListView,
 )
@@ -29,10 +32,17 @@ urlpatterns = router.urls + [
         name="stock-assignment-list",
     ),
     path(
+        "stock/assignments/export/",
+        SalesAssignmentExportView.as_view(),
+        name="stock-assignment-export",
+    ),
+    path(
         "stock/my-assignments/",
         SalesAssignmentSelfListView.as_view(),
         name="stock-assignment-self-list",
     ),
     path("stock/movements/", StockMovementListView.as_view(), name="stock-movement-list"),
     path("stock/deposits/", SalesDepositListView.as_view(), name="stock-deposit-list"),
+    path("stock/deposits/export/", SalesDepositExportView.as_view(), name="stock-deposit-export"),
+    path("stock/my-deposits/", SalesDepositSelfListView.as_view(), name="stock-deposit-self-list"),
 ]

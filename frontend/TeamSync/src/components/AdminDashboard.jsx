@@ -1,27 +1,51 @@
-import { useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { ROLE_CONFIG } from '../config/appConfig'
+import AdminShell from './AdminShell'
+import AdminStatsPanel from './AdminStatsPanel'
 import ProductList from './ProductList'
 import SalesAssignmentSummary from './SalesAssignmentSummary'
 import SalesAssignmentList from './SalesAssignmentList'
+import SalesDepositsPanel from './SalesDepositsPanel'
+import StockMovementsPanel from './StockMovementsPanel'
+import LowStockAlerts from './LowStockAlerts'
 import ReturnNotifications from './ReturnNotifications'
 
 function AdminDashboard({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
-  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const adminConfig = ROLE_CONFIG.admin
+  const activeView = searchParams.get('view') || 'dashboard'
 
-  const handleLogout = () => {
-    onLogout()
-    navigate('/login', { replace: true })
-  }
-
-  const handleAddProduct = () => {
-    navigate('/addproduct')
-  }
-  const handleAssignStock = () => {
-    navigate('/assign-stock')
-  }
-  const handleManageRoles = () => {
-    navigate('/manage-roles')
+  const renderActiveView = () => {
+    if (activeView === 'catalog') {
+      return (
+        <div className={`${styles.panelWrap} ${adminConfig.panel}`}>
+          <ProductList className={styles.actionInner} title='Product Catalog' variant='embedded' />
+        </div>
+      )
+    }
+    if (activeView === 'low-stock') {
+      return <LowStockAlerts styles={styles} />
+    }
+    if (activeView === 'assignments') {
+      return (
+        <>
+          <SalesAssignmentSummary styles={styles} />
+          <div className='mt-8'>
+            <SalesAssignmentList styles={styles} />
+          </div>
+        </>
+      )
+    }
+    if (activeView === 'deposits') {
+      return <SalesDepositsPanel styles={styles} />
+    }
+    if (activeView === 'audit') {
+      return <StockMovementsPanel styles={styles} />
+    }
+    if (activeView === 'returns') {
+      return <ReturnNotifications styles={styles} />
+    }
+    return <AdminStatsPanel styles={styles} />
   }
 
   if (!adminConfig) {
@@ -29,54 +53,18 @@ function AdminDashboard({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
   }
 
   return (
-    <div className={styles.dashboardPage}>
-      <div className='mx-auto max-w-6xl'>
-        <div
-          className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${styles.dashboardHeader}`}
-        >
-          <div>
-            <p className={`text-sm uppercase tracking-[0.28em] ${styles.eyebrow}`}>TeamSync Dashboard</p>
-            <h1 className='mt-2 text-3xl font-bold'>{adminConfig.label} Portal</h1>
-            <p className={`mt-1 ${styles.dashboardSubtext}`}>{adminConfig.headline}</p>
-          </div>
-
-          <div className='flex flex-wrap gap-2'>
-            <button className={styles.utilityButton} onClick={handleAddProduct} type='button'>
-              Add Product
-            </button>
-            <button className={styles.utilityButton} onClick={handleAssignStock} type='button'>
-              Assign Stock
-            </button>
-            <button className={styles.utilityButton} onClick={handleManageRoles} type='button'>
-              Manage Roles
-            </button>
-            <button className={styles.utilityButton} onClick={onToggleTheme} type='button'>
-              {themeButtonLabel}
-            </button>
-            <button className={styles.utilityButton} onClick={handleLogout} type='button'>
-              Logout
-            </button>
-          </div>
-        </div>
-
-        <div className={`mt-8 ${styles.panelWrap} ${adminConfig.panel}`}>
-          <ProductList className={styles.actionInner} title='Product Catalog' variant='embedded' />
-        </div>
-
-        <div className='mt-8'>
-          <SalesAssignmentSummary styles={styles} />
-        </div>
-
-        <div className='mt-8'>
-          <SalesAssignmentList styles={styles} />
-        </div>
-
-        <div className='mt-8'>
-          <ReturnNotifications styles={styles} />
-        </div>
-
-      </div>
-    </div>
+    <AdminShell
+      activeSection={activeView}
+      eyebrow='TeamSync Dashboard'
+      onLogout={onLogout}
+      onToggleTheme={onToggleTheme}
+      styles={styles}
+      subtitle={adminConfig.headline}
+      themeButtonLabel={themeButtonLabel}
+      title={`${adminConfig.label} Portal`}
+    >
+      {renderActiveView()}
+    </AdminShell>
   )
 }
 

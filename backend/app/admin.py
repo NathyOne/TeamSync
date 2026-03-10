@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import Product, SalesAssignment, StockMovement
+from .models import Product, SalesAssignment, SalesDeposit, StockMovement
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "quantity")
+    list_display = ("id", "name", "quantity", "price", "reorder_threshold")
     search_fields = ("name",)
 
 
@@ -36,3 +36,19 @@ class StockMovementAdmin(admin.ModelAdmin):
     )
     search_fields = ("salesperson__email", "product__name", "created_by__email")
     list_filter = ("movement_type", "product")
+
+
+@admin.register(SalesDeposit)
+class SalesDepositAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "salesperson",
+        "product",
+        "quantity",
+        "unit_price",
+        "total_amount",
+        "bank_name",
+        "created_at",
+    )
+    search_fields = ("salesperson__email", "product__name", "bank_name")
+    list_filter = ("bank_name",)

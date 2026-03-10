@@ -26,6 +26,7 @@ function SalesAssignments({ styles, panelClass }) {
   const [submitSale, { isLoading: isSubmitting }] = useSubmitSaleMutation()
   const [returnQuantities, setReturnQuantities] = useState({})
   const [saleBanks, setSaleBanks] = useState({})
+  const [saleQuantities, setSaleQuantities] = useState({})
   const [openSaleForms, setOpenSaleForms] = useState({})
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
@@ -34,6 +35,7 @@ function SalesAssignments({ styles, panelClass }) {
     const list = Array.isArray(data) ? data : data?.results || []
     return list.filter((assignment) => assignment.quantity > 0)
   }, [data])
+  const pendingCount = assignments.filter((assignment) => !assignment.is_accepted).length
 
   const isBusy = isAccepting || isRejecting || isReturning || isSubmitting
 
@@ -99,16 +101,35 @@ function SalesAssignments({ styles, panelClass }) {
     setActionMessage('')
     setActionError('')
     const bankName = saleBanks[assignment.id]
+    const rawQuantity = saleQuantities[assignment.id]
+    const parsedQuantity = rawQuantity ? Number(rawQuantity) : assignment.quantity
 
     if (!bankName) {
       setActionError('Select a bank before submitting the sale.')
       return
     }
 
+    if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+      setActionError('Deposit quantity must be a whole number greater than 0.')
+      return
+    }
+
+    if (parsedQuantity > Number(assignment.quantity)) {
+      setActionError('Deposit quantity exceeds assigned stock.')
+      return
+    }
+
     try {
-      await submitSale({ product_id: assignment.product, bank_name: bankName }).unwrap()
-      setActionMessage(`Submitted sale for ${assignment.product_name} via ${bankName}.`)
+      await submitSale({
+        product_id: assignment.product,
+        bank_name: bankName,
+        quantity: parsedQuantity,
+      }).unwrap()
+      setActionMessage(
+        `Submitted deposit for ${parsedQuantity} unit${parsedQuantity === 1 ? '' : 's'} of ${assignment.product_name} via ${bankName}.`,
+      )
       setSaleBanks((prev) => ({ ...prev, [assignment.id]: '' }))
+      setSaleQuantities((prev) => ({ ...prev, [assignment.id]: '' }))
       setOpenSaleForms((prev) => ({ ...prev, [assignment.id]: false }))
     } catch (apiError) {
       setActionError(getApiErrorMessage(apiError, 'Failed to submit sale.'))
@@ -154,6 +175,11 @@ function SalesAssignments({ styles, panelClass }) {
           <p className='mt-4 text-sm text-slate-400'>No active assignments yet.</p>
         ) : (
           <div className='mt-4 space-y-4'>
+            {pendingCount > 0 ? (
+              <div className='rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200'>
+                You have {pendingCount} pending assignment{pendingCount === 1 ? '' : 's'} to accept.
+              </div>
+            ) : null}
             {assignments.map((assignment) => (
               <div key={assignment.id} className='rounded-2xl border border-white/10 p-4'>
                 <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
@@ -221,13 +247,30 @@ function SalesAssignments({ styles, panelClass }) {
                       onClick={() => toggleSaleForm(assignment.id)}
                       type='button'
                     >
-                      Mark Sold
+                      Deposit Money
                     </button>
                   </div>
                 ) : null}
 
                 {assignment.is_accepted && openSaleForms[assignment.id] ? (
                   <div className='mt-4 flex flex-col gap-2 sm:flex-row sm:items-center'>
+                    <label className={styles.labelText} htmlFor={`sale-qty-${assignment.id}`}>
+                      Sold Qty
+                    </label>
+                    <input
+                      className={styles.input}
+                      id={`sale-qty-${assignment.id}`}
+                      min='1'
+                      onChange={(event) =>
+                        setSaleQuantities((prev) => ({
+                          ...prev,
+                          [assignment.id]: event.target.value,
+                        }))
+                      }
+                      placeholder={`${assignment.quantity}`}
+                      type='number'
+                      value={saleQuantities[assignment.id] || ''}
+                    />
                     <label className={styles.labelText} htmlFor={`bank-${assignment.id}`}>
                       Bank Name
                     </label>
@@ -252,7 +295,7 @@ function SalesAssignments({ styles, panelClass }) {
                       onClick={() => handleSubmitSale(assignment)}
                       type='button'
                     >
-                      Submit Sale
+                      Submit Deposit
                     </button>
                   </div>
                 ) : null}

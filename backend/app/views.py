@@ -1,8 +1,11 @@
+import csv
+from django.http import HttpResponse
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
 
 from .models import Product, SalesAssignment, SalesDeposit, StockMovement
 from .serializers import (
@@ -137,3 +140,83 @@ class SalesDepositListView(ListAPIView):
     queryset = SalesDeposit.objects.select_related("salesperson", "product").order_by("-created_at")
     serializer_class = SalesDepositSerializer
     permission_classes = [IsAuthenticated, IsAdminRole]
+
+
+class SalesDepositSelfListView(ListAPIView):
+    serializer_class = SalesDepositSerializer
+    permission_classes = [IsAuthenticated, IsSalesRole]
+
+    def get_queryset(self):
+        return SalesDeposit.objects.select_related("salesperson", "product").filter(
+            salesperson=self.request.user
+        ).order_by("-created_at")
+
+
+class SalesAssignmentExportView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def get(self, request, *args, **kwargs):
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="sales_assignments.csv"'
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                "Salesperson",
+                "Product",
+                "Quantity",
+                "Total Assigned",
+                "Total Returned",
+                "Total Sold",
+                "Accepted",
+                "Updated At",
+            ]
+        )
+        assignments = SalesAssignment.objects.select_related("salesperson", "product").order_by("id")
+        for assignment in assignments:
+            writer.writerow(
+                [
+                    assignment.salesperson.email,
+                    assignment.product.name,
+                    assignment.quantity,
+                    assignment.total_assigned,
+                    assignment.total_returned,
+                    assignment.total_sold,
+                    "Yes" if assignment.is_accepted else "No",
+                    assignment.updated_at.isoformat(),
+                ]
+            )
+        return response
+
+
+class SalesDepositExportView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def get(self, request, *args, **kwargs):
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="sales_deposits.csv"'
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                "Salesperson",
+                "Product",
+                "Quantity",
+                "Unit Price",
+                "Total Amount",
+                "Bank",
+                "Created At",
+            ]
+        )
+        deposits = SalesDeposit.objects.select_related("salesperson", "product").order_by("-created_at")
+        for deposit in deposits:
+            writer.writerow(
+                [
+                    deposit.salesperson.email,
+                    deposit.product.name,
+                    deposit.quantity,
+                    deposit.unit_price,
+                    deposit.total_amount,
+                    deposit.get_bank_name_display(),
+                    deposit.created_at.isoformat(),
+                ]
+            )
+        return response

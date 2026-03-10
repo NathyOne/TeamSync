@@ -5,6 +5,8 @@ from django.db import models
 class Product(models.Model):
     name = models.CharField(max_length=50)
     quantity = models.IntegerField(default=0)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    reorder_threshold = models.PositiveIntegerField(default=10)
 
     def __str__(self):
         return self.name
@@ -113,6 +115,8 @@ class SalesDeposit(models.Model):
         related_name="sales_deposits",
     )
     quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     bank_name = models.CharField(max_length=32, choices=BANK_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
 
