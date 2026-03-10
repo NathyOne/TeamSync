@@ -1,0 +1,32 @@
+# Python/Django
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Environment files
+.env
+.env.*
+*.local
+
+# Django artifacts
+*.sqlite3
+*.log
+media/
+static/
+staticfiles/
+
+# Packaging/build
+build/
+dist/
+*.egg-info/
+
+# Editor/OS
+.vscode/
+.idea/
+.DS_Store
