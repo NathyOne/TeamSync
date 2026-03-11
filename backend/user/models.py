@@ -34,9 +34,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('MARKETING', 'Marketing'),
         ('CUSTOMER_SUPPORT', 'Customer Support'),
     ]
+    BADGE_CHOICES = [
+        ('BASIC', 'Basic'),
+        ('SILVER', 'Silver'),
+        ('GOLD', 'Gold'),
+        ('DIAMOND', 'Diamond'),
+    ]
 
     email = models.EmailField(max_length=254, unique=True)
     role = models.CharField(max_length=50, choices=ROLE_CHOICES, default='ADMIN')
+    badge = models.CharField(max_length=20, choices=BADGE_CHOICES, default='BASIC')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

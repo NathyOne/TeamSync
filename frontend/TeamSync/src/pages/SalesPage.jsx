@@ -5,7 +5,7 @@ import SalesDepositsList from '../components/SalesDepositsList'
 import SalesShell from '../components/SalesShell'
 import SalesStatsPanel from '../components/SalesStatsPanel'
 
-function SalesPage({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
+function SalesPage({ onLogout, onToggleTheme, styles, themeButtonLabel, userBadge }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const salesConfig = ROLE_CONFIG.sales
@@ -44,6 +44,7 @@ function SalesPage({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
       subtitle={salesConfig.headline}
       themeButtonLabel={themeButtonLabel}
       title={`${salesConfig.label} Portal`}
+      userBadge={userBadge}
     >
       {renderActiveView()}
     </SalesShell>

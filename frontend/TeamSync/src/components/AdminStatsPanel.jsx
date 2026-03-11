@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useGetProductsQuery, useGetSalesAssignmentsQuery } from '../services/api'
 
-const CHART_COLORS = ['#38bdf8', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185']
+const CHART_COLORS = ['#000080', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185']
 
 const buildConicGradient = (segments) => {
   const total = segments.reduce((sum, segment) => sum + segment.value, 0)

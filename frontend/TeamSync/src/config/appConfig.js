@@ -5,6 +5,7 @@ export const ACCESS_TOKEN_KEY =
   import.meta.env.VITE_ACCESS_TOKEN_KEY
 export const REFRESH_TOKEN_KEY =
   import.meta.env.VITE_REFRESH_TOKEN_KEY
+export const USER_BADGE_KEY = 'teamsync-user-badge'
 
 export const BACKEND_ROLE_TO_APP_ROLE = {
   ADMIN: 'admin',

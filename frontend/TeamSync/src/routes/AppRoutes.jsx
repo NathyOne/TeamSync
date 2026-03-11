@@ -9,6 +9,7 @@ import {
   SESSION_KEY,
   THEME_CLASSES,
   THEME_KEY,
+  USER_BADGE_KEY,
 } from '../config/appConfig'
 import AdminPage from '../pages/AdminPage'
 import LoginPage from '../pages/LoginPage'
@@ -18,6 +19,7 @@ import SupportPage from '../pages/SupportPage'
 import ManageRolesPage from '../pages/ManageRolesPage'
 import AddProduct from '../components/AddProduct'
 import AssignStock from '../components/AssignStock'
+import { useGetCurrentUserQuery } from '../services/api'
 
 function LoginRoute({ activeRole, onLogin, onToggleTheme, styles, themeButtonLabel }) {
   if (activeRole && ROLE_CONFIG[activeRole]) {
@@ -60,6 +62,20 @@ function AppRoutes() {
     const savedTheme = window.localStorage.getItem(THEME_KEY)
     return savedTheme === 'light' ? 'light' : 'dark'
   })
+  const [userBadge, setUserBadge] = useState(() => {
+    if (typeof window === 'undefined') {
+      return 'BASIC'
+    }
+    return window.sessionStorage.getItem(USER_BADGE_KEY) || 'BASIC'
+  })
+  const hasToken =
+    typeof window !== 'undefined' && Boolean(window.sessionStorage.getItem(ACCESS_TOKEN_KEY))
+  const { data: currentUserData } = useGetCurrentUserQuery(undefined, {
+    skip: !hasToken,
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    pollingInterval: 30000,
+  })
 
   useEffect(() => {
     if (activeRole) {
@@ -73,6 +89,17 @@ function AppRoutes() {
   useEffect(() => {
     window.localStorage.setItem(THEME_KEY, theme)
   }, [theme])
+
+  useEffect(() => {
+    if (!currentUserData?.badge) {
+      return
+    }
+    const nextBadge = String(currentUserData.badge || 'BASIC').toUpperCase()
+    if (nextBadge !== userBadge) {
+      window.sessionStorage.setItem(USER_BADGE_KEY, nextBadge)
+      setUserBadge(nextBadge)
+    }
+  }, [currentUserData, userBadge])
 
   const handleLogin = async ({ email, password }) => {
     try {
@@ -101,7 +128,10 @@ function AppRoutes() {
 
       window.sessionStorage.setItem(ACCESS_TOKEN_KEY, data.access || '')
       window.sessionStorage.setItem(REFRESH_TOKEN_KEY, data.refresh || '')
+      const badge = String(data?.badge || 'BASIC').toUpperCase()
+      window.sessionStorage.setItem(USER_BADGE_KEY, badge)
       setActiveRole(mappedRole)
+      setUserBadge(badge)
 
       return { ok: true }
     } catch {
@@ -112,7 +142,9 @@ function AppRoutes() {
   const handleLogout = () => {
     window.sessionStorage.removeItem(ACCESS_TOKEN_KEY)
     window.sessionStorage.removeItem(REFRESH_TOKEN_KEY)
+    window.sessionStorage.removeItem(USER_BADGE_KEY)
     setActiveRole('')
+    setUserBadge('BASIC')
   }
 
   const toggleTheme = () => {
@@ -124,6 +156,7 @@ function AppRoutes() {
     onToggleTheme: toggleTheme,
     styles: THEME_CLASSES[theme],
     themeButtonLabel: theme === 'dark' ? 'Day Mode' : 'Night Mode',
+    userBadge,
   }
 
   return (

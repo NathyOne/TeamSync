@@ -1,26 +1,23 @@
 import { useMemo, useState } from 'react'
 import {
   useDeleteUserMutation,
-  useGetSalesAssignmentsQuery,
   useGetUsersQuery,
   useUpdateUserMutation,
 } from '../services/api'
+import BadgePill from './BadgePill'
 
 const ROLE_SECTIONS = [
   {
     key: 'SALES',
     label: 'Sales',
-    badgeLabel: 'Good Sales',
   },
   {
     key: 'MARKETING',
     label: 'Marketing',
-    badgeLabel: 'Good Marketing',
   },
   {
     key: 'CUSTOMER_SUPPORT',
     label: 'Customer Support',
-    badgeLabel: 'Good Support',
   },
 ]
 
@@ -29,6 +26,13 @@ const ROLE_OPTIONS = [
   { value: 'SALES', label: 'Sales' },
   { value: 'MARKETING', label: 'Marketing' },
   { value: 'CUSTOMER_SUPPORT', label: 'Customer Support' },
+]
+
+const BADGE_OPTIONS = [
+  { value: 'BASIC', label: 'Basic' },
+  { value: 'SILVER', label: 'Silver' },
+  { value: 'GOLD', label: 'Gold' },
+  { value: 'DIAMOND', label: 'Diamond' },
 ]
 
 const calculateYears = (createdAt) => {
@@ -47,11 +51,11 @@ const calculateYears = (createdAt) => {
 function ManageRoles({ styles, accentClass = '' }) {
   const [isOpen, setIsOpen] = useState(false)
   const [roleEdits, setRoleEdits] = useState({})
+  const [badgeEdits, setBadgeEdits] = useState({})
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
 
   const { data: usersData, error, isLoading, isFetching } = useGetUsersQuery()
-  const { data: assignmentsData } = useGetSalesAssignmentsQuery()
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation()
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation()
 
@@ -59,19 +63,6 @@ function ManageRoles({ styles, accentClass = '' }) {
     const list = Array.isArray(usersData) ? usersData : usersData?.results || []
     return list.filter((user) => user.role && String(user.role).toUpperCase() !== 'ADMIN')
   }, [usersData])
-
-  const salesTotals = useMemo(() => {
-    const list = Array.isArray(assignmentsData) ? assignmentsData : assignmentsData?.results || []
-    const totals = new Map()
-
-    list.forEach((assignment) => {
-      const id = String(assignment.salesperson)
-      const current = totals.get(id) || 0
-      totals.set(id, current + Number(assignment.total_assigned || 0))
-    })
-
-    return totals
-  }, [assignmentsData])
 
   const groupedUsers = useMemo(() => {
     const groups = {}
@@ -93,6 +84,10 @@ function ManageRoles({ styles, accentClass = '' }) {
     setRoleEdits((prev) => ({ ...prev, [userId]: value }))
   }
 
+  const handleBadgeChange = (userId, value) => {
+    setBadgeEdits((prev) => ({ ...prev, [userId]: value }))
+  }
+
   const handleUpdateRole = async (user) => {
     setActionMessage('')
     setActionError('')
@@ -111,6 +106,28 @@ function ManageRoles({ styles, accentClass = '' }) {
         apiError?.data?.detail ||
         (typeof apiError?.data === 'string' ? apiError.data : '') ||
         'Failed to update role.'
+      setActionError(message)
+    }
+  }
+
+  const handleUpdateBadge = async (user) => {
+    setActionMessage('')
+    setActionError('')
+    const nextBadge = badgeEdits[user.id] || user.badge || 'BASIC'
+
+    if (String(nextBadge).toUpperCase() === String(user.badge || 'BASIC').toUpperCase()) {
+      setActionError('Select a different badge before updating.')
+      return
+    }
+
+    try {
+      await updateUser({ id: user.id, badge: String(nextBadge).toUpperCase() }).unwrap()
+      setActionMessage(`Updated ${user.email} badge to ${nextBadge}.`)
+    } catch (apiError) {
+      const message =
+        apiError?.data?.detail ||
+        (typeof apiError?.data === 'string' ? apiError.data : '') ||
+        'Failed to update badge.'
       setActionError(message)
     }
   }
@@ -181,9 +198,7 @@ function ManageRoles({ styles, accentClass = '' }) {
                     <div className='mt-4 space-y-3'>
                       {sectionUsers.map((user) => {
                         const yearsServed = calculateYears(user.created_at)
-                        const badgeText = section.badgeLabel
-                        const hasSalesBadge =
-                          section.key === 'SALES' && (salesTotals.get(String(user.id)) || 0) >= 10
+                        const badgeValue = String(user.badge || 'BASIC').toUpperCase()
 
                         return (
                           <div
@@ -197,14 +212,7 @@ function ManageRoles({ styles, accentClass = '' }) {
                                 {yearsServed === null ? 'N/A' : `${yearsServed} years`}
                               </p>
                               <div className='mt-2 flex flex-wrap gap-2'>
-                                <span className='rounded-full bg-slate-800/60 px-3 py-1 text-xs font-semibold text-slate-200'>
-                                  {badgeText}
-                                </span>
-                                {section.key === 'SALES' ? (
-                                  <span className='rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200'>
-                                    {hasSalesBadge ? 'Top Sales' : 'Rising Sales'}
-                                  </span>
-                                ) : null}
+                                <BadgePill badge={badgeValue} />
                               </div>
                             </div>
 
@@ -227,6 +235,25 @@ function ManageRoles({ styles, accentClass = '' }) {
                                 type='button'
                               >
                                 Change Role
+                              </button>
+                              <select
+                                className={styles.input}
+                                onChange={(event) => handleBadgeChange(user.id, event.target.value)}
+                                value={badgeEdits[user.id] || badgeValue}
+                              >
+                                {BADGE_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                className={styles.utilityButton}
+                                disabled={isBusy}
+                                onClick={() => handleUpdateBadge(user)}
+                                type='button'
+                              >
+                                Update Badge
                               </button>
                               <button
                                 className={styles.utilityButton}

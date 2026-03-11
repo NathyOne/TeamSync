@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { ROLE_CONFIG } from '../config/appConfig'
+import BadgePill from '../components/BadgePill'
 
-function SupportPage({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
+function SupportPage({ onLogout, onToggleTheme, styles, themeButtonLabel, userBadge }) {
   const navigate = useNavigate()
   const supportConfig = ROLE_CONFIG.support
 
@@ -24,6 +25,12 @@ function SupportPage({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
             <p className={`text-sm uppercase tracking-[0.28em] ${styles.eyebrow}`}>TeamSync Dashboard</p>
             <h1 className='mt-2 text-3xl font-bold'>{supportConfig.label} Portal</h1>
             <p className={`mt-1 ${styles.dashboardSubtext}`}>{supportConfig.headline}</p>
+            {userBadge ? (
+              <div className='mt-3 flex flex-wrap items-center gap-2'>
+                <span className={`text-xs uppercase tracking-[0.24em] ${styles.eyebrow}`}>Badge</span>
+                <BadgePill badge={userBadge} />
+              </div>
+            ) : null}
           </div>
 
           <div className='flex flex-wrap gap-2'>

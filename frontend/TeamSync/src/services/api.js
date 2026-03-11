@@ -4,6 +4,7 @@ import {
   JWT_LOGIN_URL,
   REFRESH_TOKEN_KEY,
   SESSION_KEY,
+  USER_BADGE_KEY,
 } from '../config/appConfig'
 
 const refreshUrl =
@@ -32,6 +33,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       window.sessionStorage.removeItem(ACCESS_TOKEN_KEY)
       window.sessionStorage.removeItem(REFRESH_TOKEN_KEY)
       window.sessionStorage.removeItem(SESSION_KEY)
+      window.sessionStorage.removeItem(USER_BADGE_KEY)
       if (typeof window !== 'undefined') {
         window.location.replace('/login')
       }
@@ -55,6 +57,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       window.sessionStorage.removeItem(ACCESS_TOKEN_KEY)
       window.sessionStorage.removeItem(REFRESH_TOKEN_KEY)
       window.sessionStorage.removeItem(SESSION_KEY)
+      window.sessionStorage.removeItem(USER_BADGE_KEY)
       if (typeof window !== 'undefined') {
         window.location.replace('/login')
       }
@@ -75,6 +78,10 @@ export const api = createApi({
     }),
     getUsers: builder.query({
       query: () => 'user/register/',
+      providesTags: ['User'],
+    }),
+    getCurrentUser: builder.query({
+      query: () => 'user/me/',
       providesTags: ['User'],
     }),
     updateUser: builder.mutation({
@@ -166,6 +173,7 @@ export const api = createApi({
 export const {
   useGetProductsQuery,
   useGetUsersQuery,
+  useGetCurrentUserQuery,
   useAddProductMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,

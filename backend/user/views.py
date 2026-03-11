@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from .serializers import createUserSerializer
 from .models import User
@@ -19,3 +19,10 @@ class CreateUserView(ModelViewSet):
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated, IsAdminRole]
 
+
+class CurrentUserView(RetrieveAPIView):
+    serializer_class = createUserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

@@ -8,11 +8,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
         token["role"] = user.role  # optional: puts role inside JWT claims
+        token["badge"] = getattr(user, "badge", "BASIC")
         return token
 
     def validate(self, attrs):
         data = super().validate(attrs)
         data["role"] = self.user.role  # adds role in login response body
+        data["email"] = self.user.email
+        data["badge"] = getattr(self.user, "badge", "BASIC")
+        data["id"] = self.user.id
         return data
 
 
@@ -21,7 +25,7 @@ class createUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['id', 'email', 'password', 'role', 'created_at']
+        fields = ['id', 'email', 'password', 'role', 'badge', 'created_at']
         extra_kwargs = {
             'password': {'write_only': True},
             'created_at': {'read_only': True},
