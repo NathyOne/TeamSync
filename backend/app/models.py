@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
 
 class Product(models.Model):
@@ -10,6 +11,22 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(quantity__gte=0),
+                name="product_quantity_nonnegative",
+            ),
+            models.CheckConstraint(
+                condition=Q(price__gte=0),
+                name="product_price_nonnegative",
+            ),
+            models.CheckConstraint(
+                condition=Q(reorder_threshold__gte=0),
+                name="product_reorder_threshold_nonnegative",
+            ),
+        ]
 
 
 class SalesAssignment(models.Model):
@@ -125,3 +142,69 @@ class SalesDeposit(models.Model):
 
     def __str__(self):
         return f"{self.salesperson} sold {self.quantity} {self.product} via {self.bank_name}"
+
+
+class AuditLog(models.Model):
+    ROLE_CHANGE = "ROLE_CHANGE"
+    BADGE_CHANGE = "BADGE_CHANGE"
+    STOCK_ASSIGN = "STOCK_ASSIGN"
+    STOCK_RETURN = "STOCK_RETURN"
+    SALES_DEPOSIT = "SALES_DEPOSIT"
+    ASSIGN_ACCEPT = "ASSIGN_ACCEPT"
+    ASSIGN_REJECT = "ASSIGN_REJECT"
+
+    EVENT_CHOICES = [
+        (ROLE_CHANGE, "Role change"),
+        (BADGE_CHANGE, "Badge change"),
+        (STOCK_ASSIGN, "Stock assignment"),
+        (STOCK_RETURN, "Stock return"),
+        (SALES_DEPOSIT, "Sales deposit"),
+        (ASSIGN_ACCEPT, "Assignment accepted"),
+        (ASSIGN_REJECT, "Assignment rejected"),
+    ]
+
+    event_type = models.CharField(max_length=32, choices=EVENT_CHOICES)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="audit_events",
+    )
+    target_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="audit_targets",
+    )
+    product = models.ForeignKey(
+        Product,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="audit_logs",
+    )
+    assignment = models.ForeignKey(
+        SalesAssignment,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="audit_logs",
+    )
+    deposit = models.ForeignKey(
+        SalesDeposit,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="audit_logs",
+    )
+    quantity = models.PositiveIntegerField(null=True, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.event_type} by {self.actor or 'system'}"

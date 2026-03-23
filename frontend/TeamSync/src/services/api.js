@@ -1,6 +1,8 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import {
   ACCESS_TOKEN_KEY,
+  API_BASE_URL,
+  AUTH_BASE_URL,
   JWT_LOGIN_URL,
   REFRESH_TOKEN_KEY,
   SESSION_KEY,
@@ -10,10 +12,10 @@ import {
 const refreshUrl =
   typeof JWT_LOGIN_URL === 'string' && JWT_LOGIN_URL.includes('/create/')
     ? JWT_LOGIN_URL.replace('/create/', '/refresh/')
-    : 'http://localhost:9000/auth/jwt/refresh/'
+    : `${AUTH_BASE_URL}/jwt/refresh/`
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'http://localhost:9000/teamsync/',
+  baseUrl: `${API_BASE_URL}/`,
   prepareHeaders: (headers) => {
     const token = window.sessionStorage.getItem(ACCESS_TOKEN_KEY)
     if (token) {
@@ -70,7 +72,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Product', 'User', 'Assignment', 'Movement'],
+  tagTypes: ['Product', 'User', 'Assignment', 'Movement', 'Audit', 'Analytics'],
   endpoints: (builder) => ({
     getProducts: builder.query({
       query: () => 'app/products/',
@@ -90,7 +92,7 @@ export const api = createApi({
         method: 'PATCH',
         body: patch,
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'Audit', 'Analytics'],
     }),
     deleteUser: builder.mutation({
       query: (id) => ({
@@ -110,6 +112,22 @@ export const api = createApi({
     getSalesAssignments: builder.query({
       query: () => 'app/stock/assignments/',
       providesTags: ['Assignment'],
+    }),
+    getAdminAnalytics: builder.query({
+      query: () => 'app/analytics/admin/',
+      providesTags: ['Analytics'],
+    }),
+    getSalesAnalytics: builder.query({
+      query: () => 'app/analytics/sales/',
+      providesTags: ['Analytics'],
+    }),
+    getCompanyOverview: builder.query({
+      query: () => 'app/analytics/overview/',
+      providesTags: ['Analytics'],
+    }),
+    getAuditLogs: builder.query({
+      query: () => 'app/audit-logs/',
+      providesTags: ['Audit'],
     }),
     getStockMovements: builder.query({
       query: () => 'app/stock/movements/',
@@ -133,7 +151,7 @@ export const api = createApi({
         method: 'POST',
         body: assignment,
       }),
-      invalidatesTags: ['Product', 'Assignment'],
+      invalidatesTags: ['Product', 'Assignment', 'Movement', 'Audit', 'Analytics'],
     }),
     acceptAssignment: builder.mutation({
       query: (payload) => ({
@@ -141,7 +159,7 @@ export const api = createApi({
         method: 'POST',
         body: payload,
       }),
-      invalidatesTags: ['Assignment'],
+      invalidatesTags: ['Assignment', 'Audit', 'Analytics'],
     }),
     rejectAssignment: builder.mutation({
       query: (payload) => ({
@@ -149,7 +167,7 @@ export const api = createApi({
         method: 'POST',
         body: payload,
       }),
-      invalidatesTags: ['Product', 'Assignment'],
+      invalidatesTags: ['Product', 'Assignment', 'Movement', 'Audit', 'Analytics'],
     }),
     returnStock: builder.mutation({
       query: (payload) => ({
@@ -157,7 +175,7 @@ export const api = createApi({
         method: 'POST',
         body: payload,
       }),
-      invalidatesTags: ['Product', 'Assignment', 'Movement'],
+      invalidatesTags: ['Product', 'Assignment', 'Movement', 'Audit', 'Analytics'],
     }),
     submitSale: builder.mutation({
       query: (payload) => ({
@@ -165,7 +183,7 @@ export const api = createApi({
         method: 'POST',
         body: payload,
       }),
-      invalidatesTags: ['Assignment', 'Movement'],
+      invalidatesTags: ['Assignment', 'Movement', 'Audit', 'Analytics'],
     }),
   }),
 })
@@ -178,6 +196,10 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useGetSalesAssignmentsQuery,
+  useGetAdminAnalyticsQuery,
+  useGetSalesAnalyticsQuery,
+  useGetCompanyOverviewQuery,
+  useGetAuditLogsQuery,
   useGetStockMovementsQuery,
   useGetSalesDepositsQuery,
   useGetMyDepositsQuery,

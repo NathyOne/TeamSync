@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ROLE_CONFIG } from '../config/appConfig'
 import BadgePill from '../components/BadgePill'
+import CompanyOverviewPanel from '../components/CompanyOverviewPanel'
 
 function SupportPage({ onLogout, onToggleTheme, styles, themeButtonLabel, userBadge }) {
   const navigate = useNavigate()
@@ -43,16 +44,7 @@ function SupportPage({ onLogout, onToggleTheme, styles, themeButtonLabel, userBa
           </div>
         </div>
 
-        <div className={`mt-8 ${styles.panelWrap} ${supportConfig.panel}`}>
-          <div className='grid gap-4 md:grid-cols-3'>
-            {supportConfig.stats.map((item) => (
-              <div key={item.label} className={styles.statCard}>
-                <p className={styles.statLabel}>{item.label}</p>
-                <p className='mt-1 text-2xl font-bold'>{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CompanyOverviewPanel styles={styles} accentClass={supportConfig.panel} />
 
         <div className='mt-8 rounded-2xl border border-slate-300/20 p-5'>
           <h2 className='text-xl font-semibold'>Support Workspace</h2>

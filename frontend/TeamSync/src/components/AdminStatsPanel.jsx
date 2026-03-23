@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useGetProductsQuery, useGetSalesAssignmentsQuery } from '../services/api'
+import { useGetAdminAnalyticsQuery } from '../services/api'
 
 const CHART_COLORS = ['#000080', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185']
 
@@ -23,105 +23,47 @@ const buildConicGradient = (segments) => {
 
 function AdminStatsPanel({ styles }) {
   const {
-    data: assignmentsData,
-    error: assignmentsError,
-    isLoading: assignmentsLoading,
-    isFetching: assignmentsFetching,
-  } = useGetSalesAssignmentsQuery()
-  const { data: productsData } = useGetProductsQuery()
-
-  const assignments = Array.isArray(assignmentsData)
-    ? assignmentsData
-    : assignmentsData?.results || []
-  const products = Array.isArray(productsData) ? productsData : productsData?.results || []
+    data,
+    error,
+    isLoading,
+    isFetching,
+  } = useGetAdminAnalyticsQuery()
 
   const stats = useMemo(() => {
-    let totalSold = 0
-    let totalReturned = 0
-    let activeAssigned = 0
-    const salespersonTotals = new Map()
-    const productTotals = new Map()
-    const salespeople = new Set()
-
-    const breakdown = assignments
-      .filter((assignment) => Number(assignment.total_sold) > 0)
-      .map((assignment) => ({
-        id: assignment.id,
-        salesperson: assignment.salesperson_email || `Sales #${assignment.salesperson}`,
-        product: assignment.product_name,
-        sold: Number(assignment.total_sold) || 0,
-      }))
-      .sort((a, b) => b.sold - a.sold)
-
-    assignments.forEach((assignment) => {
-      const sold = Number(assignment.total_sold) || 0
-      const returned = Number(assignment.total_returned) || 0
-      const currentQty = Number(assignment.quantity) || 0
-
-      totalSold += sold
-      totalReturned += returned
-      activeAssigned += currentQty
-
-      const salesperson = assignment.salesperson_email || `Sales #${assignment.salesperson}`
-      salespeople.add(salesperson)
-      if (!salespersonTotals.has(salesperson)) {
-        salespersonTotals.set(salesperson, 0)
-      }
-      salespersonTotals.set(salesperson, salespersonTotals.get(salesperson) + sold)
-
-      const product = assignment.product_name
-      if (product) {
-        if (!productTotals.has(product)) {
-          productTotals.set(product, 0)
-        }
-        productTotals.set(product, productTotals.get(product) + sold)
-      }
-    })
-
-    const lowStockCount = products.filter(
-      (product) =>
-        Number(product.quantity) > 0 &&
-        Number(product.reorder_threshold) >= 0 &&
-        Number(product.quantity) <= Number(product.reorder_threshold),
-    ).length
-
-    const topSalesperson = Array.from(salespersonTotals.entries()).sort((a, b) => b[1] - a[1])[0]
-    const topProduct = Array.from(productTotals.entries()).sort((a, b) => b[1] - a[1])[0]
-    const topProducts = Array.from(productTotals.entries())
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
-    const topSalespeople = Array.from(salespersonTotals.entries())
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
-
-    const salesMix = [
-      { label: 'Sold', value: totalSold },
-      { label: 'Returned', value: totalReturned },
-      { label: 'Active', value: activeAssigned },
-    ]
-
+    const totals = data?.totals || {}
     return {
-      totalSold,
-      totalReturned,
-      activeAssigned,
-      activeSalespeople: salespeople.size,
-      lowStockCount,
-      topSalesperson: topSalesperson ? { name: topSalesperson[0], sold: topSalesperson[1] } : null,
-      topProduct: topProduct ? { name: topProduct[0], sold: topProduct[1] } : null,
-      topProducts,
-      topSalespeople,
-      salesMix,
-      breakdown,
+      totalSold: totals.total_sold || 0,
+      totalReturned: totals.total_returned || 0,
+      activeAssigned: totals.active_assigned || 0,
+      totalAssigned: totals.total_assigned || 0,
+      activeSalespeople: totals.active_salespeople || 0,
+      lowStockCount: totals.low_stock_count || 0,
+      totalProducts: totals.total_products || 0,
+      totalDeposits: totals.total_deposits || 0,
+      totalAmount: totals.total_amount || 0,
+      returnsRate: totals.returns_rate || 0,
+      topProducts: data?.top_products || [],
+      topSalespeople: data?.top_salespeople || [],
+      salesMix: data?.sales_mix || [],
+      bankMix: data?.bank_mix || [],
+      activityTrend: data?.activity_trend || [],
+      recentAudits: data?.recent_audits || [],
     }
-  }, [assignments, products])
+  }, [data])
 
-  const maxProductValue = Math.max(...stats.topProducts.map((item) => item.value), 1)
-  const maxSalesValue = Math.max(...stats.topSalespeople.map((item) => item.value), 1)
+  const maxProductValue = Math.max(...stats.topProducts.map((item) => item.sold), 1)
+  const maxSalesValue = Math.max(...stats.topSalespeople.map((item) => item.sold), 1)
+  const maxBankValue = Math.max(...stats.bankMix.map((item) => item.amount), 1)
+  const maxTrendValue = Math.max(
+    ...stats.activityTrend.map((item) => Math.max(item.assigned, item.returned)),
+    1,
+  )
   const salesMixGradient = buildConicGradient(stats.salesMix)
 
-  if (assignmentsLoading) {
+  const topSalesperson = stats.topSalespeople[0] || null
+  const topProduct = stats.topProducts[0] || null
+
+  if (isLoading) {
     return (
       <div className={`mt-8 ${styles.panelWrap} from-cyan-500/15 to-blue-500/20`}>
         <div className={styles.actionInner}>
@@ -131,12 +73,12 @@ function AdminStatsPanel({ styles }) {
     )
   }
 
-  if (assignmentsError) {
+  if (error) {
     const errorMessage =
-      assignmentsError?.data?.detail ||
-      (typeof assignmentsError?.data === 'string' ? assignmentsError.data : '') ||
-      (assignmentsError?.status
-        ? `Request failed with status ${assignmentsError.status}.`
+      error?.data?.detail ||
+      (typeof error?.data === 'string' ? error.data : '') ||
+      (error?.status
+        ? `Request failed with status ${error.status}.`
         : 'Failed to load admin stats.')
 
     return (
@@ -154,14 +96,12 @@ function AdminStatsPanel({ styles }) {
         <div className='flex flex-wrap items-center justify-between gap-2'>
           <div>
             <h2 className='text-xl font-semibold'>Sales Performance</h2>
-            <p className={`mt-1 text-sm ${styles.dashboardSubtext}`}>
-              Items sold per product and per salesperson.
-            </p>
+            <p className={`mt-1 text-sm ${styles.dashboardSubtext}`}>Revenue, returns, and sales mix.</p>
           </div>
-          {assignmentsFetching ? <span className='text-sm text-slate-400'>Refreshing...</span> : null}
+          {isFetching ? <span className='text-sm text-slate-400'>Refreshing...</span> : null}
         </div>
 
-        <div className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
+        <div className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6'>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Total Sold</p>
             <p className='mt-2 text-2xl font-semibold'>{stats.totalSold}</p>
@@ -171,12 +111,16 @@ function AdminStatsPanel({ styles }) {
             <p className='mt-2 text-2xl font-semibold'>{stats.activeAssigned}</p>
           </div>
           <div className={styles.statCard}>
-            <p className={styles.statLabel}>Total Returned</p>
-            <p className='mt-2 text-2xl font-semibold'>{stats.totalReturned}</p>
-          </div>
-          <div className={styles.statCard}>
             <p className={styles.statLabel}>Active Salespeople</p>
             <p className='mt-2 text-2xl font-semibold'>{stats.activeSalespeople}</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>Revenue</p>
+            <p className='mt-2 text-2xl font-semibold'>{stats.totalAmount}</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>Return Rate</p>
+            <p className='mt-2 text-2xl font-semibold'>{stats.returnsRate}%</p>
           </div>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Low Stock Items</p>
@@ -188,19 +132,19 @@ function AdminStatsPanel({ styles }) {
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Top Salesperson</p>
             <p className='mt-2 text-lg font-semibold'>
-              {stats.topSalesperson ? stats.topSalesperson.name : 'No sales yet'}
+              {topSalesperson ? topSalesperson.name : 'No sales yet'}
             </p>
-            {stats.topSalesperson ? (
-              <p className='text-sm text-slate-300'>Sold: {stats.topSalesperson.sold}</p>
+            {topSalesperson ? (
+              <p className='text-sm text-slate-300'>Sold: {topSalesperson.sold}</p>
             ) : null}
           </div>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Top Product</p>
             <p className='mt-2 text-lg font-semibold'>
-              {stats.topProduct ? stats.topProduct.name : 'No sales yet'}
+              {topProduct ? topProduct.name : 'No sales yet'}
             </p>
-            {stats.topProduct ? (
-              <p className='text-sm text-slate-300'>Sold: {stats.topProduct.sold}</p>
+            {topProduct ? (
+              <p className='text-sm text-slate-300'>Sold: {topProduct.sold}</p>
             ) : null}
           </div>
         </div>
@@ -238,13 +182,13 @@ function AdminStatsPanel({ styles }) {
                   <div key={item.name}>
                     <div className='flex items-center justify-between text-xs text-slate-300'>
                       <span>{item.name}</span>
-                      <span>{item.value}</span>
+                      <span>{item.sold}</span>
                     </div>
                     <div className='mt-1 h-2 rounded-full bg-slate-800/70'>
                       <div
                         className='h-2 rounded-full'
                         style={{
-                          width: `${(item.value / maxProductValue) * 100}%`,
+                          width: `${(item.sold / maxProductValue) * 100}%`,
                           backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
                         }}
                       />
@@ -256,22 +200,24 @@ function AdminStatsPanel({ styles }) {
           </div>
 
           <div className={styles.statCard}>
-            <p className={styles.statLabel}>Sales by Person</p>
-            {stats.topSalespeople.length === 0 ? (
-              <p className='mt-3 text-sm text-slate-400'>No sales yet.</p>
+            <p className={styles.statLabel}>Deposits by Bank</p>
+            {stats.bankMix.length === 0 ? (
+              <p className='mt-3 text-sm text-slate-400'>No deposits yet.</p>
             ) : (
               <div className='mt-3 space-y-3'>
-                {stats.topSalespeople.map((item, index) => (
-                  <div key={item.name}>
+                {stats.bankMix.map((item, index) => (
+                  <div key={item.label}>
                     <div className='flex items-center justify-between text-xs text-slate-300'>
-                      <span>{item.name}</span>
-                      <span>{item.value}</span>
+                      <span>{item.label}</span>
+                      <span>
+                        {item.count} • {item.amount}
+                      </span>
                     </div>
                     <div className='mt-1 h-2 rounded-full bg-slate-800/70'>
                       <div
                         className='h-2 rounded-full'
                         style={{
-                          width: `${(item.value / maxSalesValue) * 100}%`,
+                          width: `${(item.amount / maxBankValue) * 100}%`,
                           backgroundColor: CHART_COLORS[(index + 2) % CHART_COLORS.length],
                         }}
                       />
@@ -284,23 +230,89 @@ function AdminStatsPanel({ styles }) {
         </div>
 
         <div className='mt-6'>
-          <div className='flex items-center justify-between'>
-            <h3 className='text-lg font-semibold'>Sold Items by Salesperson & Product</h3>
+          <div className='grid gap-4 lg:grid-cols-2'>
+            <div className={styles.statCard}>
+              <p className={styles.statLabel}>Sales by Person</p>
+              {stats.topSalespeople.length === 0 ? (
+                <p className='mt-3 text-sm text-slate-400'>No sales yet.</p>
+              ) : (
+                <div className='mt-3 space-y-3'>
+                  {stats.topSalespeople.map((item, index) => (
+                    <div key={item.name}>
+                      <div className='flex items-center justify-between text-xs text-slate-300'>
+                        <span>{item.name}</span>
+                        <span>{item.sold}</span>
+                      </div>
+                      <div className='mt-1 h-2 rounded-full bg-slate-800/70'>
+                        <div
+                          className='h-2 rounded-full'
+                          style={{
+                            width: `${(item.sold / maxSalesValue) * 100}%`,
+                            backgroundColor: CHART_COLORS[(index + 4) % CHART_COLORS.length],
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.statCard}>
+              <p className={styles.statLabel}>Weekly Stock Activity</p>
+              {stats.activityTrend.length === 0 ? (
+                <p className='mt-3 text-sm text-slate-400'>No recent movements.</p>
+              ) : (
+                <div className='mt-3 space-y-3'>
+                  {stats.activityTrend.map((row, index) => (
+                    <div key={row.date}>
+                      <div className='flex items-center justify-between text-xs text-slate-300'>
+                        <span>{new Date(row.date).toLocaleDateString()}</span>
+                        <span>
+                          {row.assigned} assigned • {row.returned} returned
+                        </span>
+                      </div>
+                      <div className='mt-1 flex h-2 gap-1 rounded-full bg-slate-800/70'>
+                        <div
+                          className='h-2 rounded-full bg-emerald-400'
+                          style={{ width: `${(row.assigned / maxTrendValue) * 100}%` }}
+                        />
+                        <div
+                          className='h-2 rounded-full bg-rose-400'
+                          style={{ width: `${(row.returned / maxTrendValue) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          {stats.breakdown.length === 0 ? (
-            <p className='mt-3 text-sm text-slate-400'>No sold items recorded yet.</p>
+        </div>
+
+        <div className='mt-6'>
+          <h3 className='text-lg font-semibold'>Recent Activity</h3>
+          {stats.recentAudits.length === 0 ? (
+            <p className='mt-3 text-sm text-slate-400'>No audit events recorded yet.</p>
           ) : (
             <div className='mt-3 space-y-2'>
-              {stats.breakdown.map((row) => (
+              {stats.recentAudits.map((event) => (
                 <div
-                  key={row.id}
+                  key={event.id}
                   className='flex flex-col gap-2 rounded-2xl border border-white/10 p-3 sm:flex-row sm:items-center sm:justify-between'
                 >
                   <div>
-                    <p className='text-sm text-slate-400'>Sales: {row.salesperson}</p>
-                    <p className='text-lg font-semibold'>{row.product}</p>
+                    <p className='text-xs text-slate-400'>{event.event_type.replaceAll('_', ' ')}</p>
+                    <p className='text-sm font-semibold'>
+                      {event.actor_email || 'System'} → {event.target_email || 'N/A'}
+                    </p>
+                    {event.product_name ? (
+                      <p className='text-xs text-slate-400'>Product: {event.product_name}</p>
+                    ) : null}
                   </div>
-                  <div className='text-sm text-slate-200'>Sold: {row.sold}</div>
+                  <div className='text-xs text-slate-400'>
+                    {event.created_at ? new Date(event.created_at).toLocaleString() : ''}
+                  </div>
                 </div>
               ))}
             </div>

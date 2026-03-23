@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { useGetMyAssignmentsQuery, useGetMyDepositsQuery } from '../services/api'
+import { useGetSalesAnalyticsQuery } from '../services/api'
 
-const CHART_COLORS = ['#38bdf8', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185']
+const CHART_COLORS = ['#000080', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185']
 
 const buildConicGradient = (segments) => {
   const total = segments.reduce((sum, segment) => sum + segment.value, 0)
@@ -23,90 +23,33 @@ const buildConicGradient = (segments) => {
 
 function SalesStatsPanel({ styles }) {
   const {
-    data: assignmentsData,
-    error: assignmentsError,
-    isLoading: assignmentsLoading,
-    isFetching: assignmentsFetching,
-  } = useGetMyAssignmentsQuery()
-  const { data: depositsData } = useGetMyDepositsQuery()
-
-  const assignments = Array.isArray(assignmentsData)
-    ? assignmentsData
-    : assignmentsData?.results || []
-  const deposits = Array.isArray(depositsData) ? depositsData : depositsData?.results || []
+    data,
+    error,
+    isLoading,
+    isFetching,
+  } = useGetSalesAnalyticsQuery()
 
   const stats = useMemo(() => {
-    let totalAssigned = 0
-    let totalSold = 0
-    let totalReturned = 0
-    let activeAssigned = 0
-    let pendingAcceptance = 0
-    const productTotals = new Map()
-    const bankTotals = new Map()
-
-    assignments.forEach((assignment) => {
-      totalAssigned += Number(assignment.total_assigned) || 0
-      totalSold += Number(assignment.total_sold) || 0
-      totalReturned += Number(assignment.total_returned) || 0
-      activeAssigned += Number(assignment.quantity) || 0
-      if (!assignment.is_accepted && Number(assignment.quantity) > 0) {
-        pendingAcceptance += 1
-      }
-
-      const productName = assignment.product_name
-      if (productName) {
-        productTotals.set(productName, (productTotals.get(productName) || 0) + (Number(assignment.total_sold) || 0))
-      }
-    })
-
-    deposits.forEach((deposit) => {
-      const bank = deposit.bank_display || deposit.bank_name || 'Unknown'
-      const amount = Number(deposit.total_amount) || 0
-      const current = bankTotals.get(bank) || { count: 0, amount: 0 }
-      bankTotals.set(bank, {
-        count: current.count + 1,
-        amount: current.amount + amount,
-      })
-    })
-
-    const topProducts = Array.from(productTotals.entries())
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
-
-    const bankMix = Array.from(bankTotals.entries())
-      .map(([name, value]) => ({ label: name, count: value.count, amount: value.amount }))
-      .sort((a, b) => b.amount - a.amount)
-
-    const salesMix = [
-      { label: 'Sold', value: totalSold },
-      { label: 'Active', value: activeAssigned },
-      { label: 'Returned', value: totalReturned },
-    ]
-
-    const totalDeposits = deposits.reduce(
-      (sum, deposit) => sum + (Number(deposit.total_amount) || 0),
-      0,
-    )
-
+    const totals = data?.totals || {}
     return {
-      totalAssigned,
-      totalSold,
-      totalReturned,
-      activeAssigned,
-      pendingAcceptance,
-      topProducts,
-      bankMix,
-      salesMix,
-      totalDeposits,
+      totalAssigned: totals.total_assigned || 0,
+      totalSold: totals.total_sold || 0,
+      totalReturned: totals.total_returned || 0,
+      activeAssigned: totals.active_assigned || 0,
+      pendingAcceptance: totals.pending_acceptance || 0,
+      totalAmount: totals.total_amount || 0,
+      returnsRate: totals.returns_rate || 0,
+      topProducts: data?.top_products || [],
+      bankMix: data?.bank_mix || [],
+      salesMix: data?.sales_mix || [],
     }
-  }, [assignments, deposits])
+  }, [data])
 
-  const maxProductValue = Math.max(...stats.topProducts.map((item) => item.value), 1)
+  const maxProductValue = Math.max(...stats.topProducts.map((item) => item.sold), 1)
   const maxBankValue = Math.max(...stats.bankMix.map((item) => item.amount), 1)
   const salesMixGradient = buildConicGradient(stats.salesMix)
 
-  if (assignmentsLoading) {
+  if (isLoading) {
     return (
       <div className={`mt-8 ${styles.panelWrap} ${styles.dashboardHeader}`}>
         <p className='text-sm text-slate-400'>Loading sales analytics...</p>
@@ -114,12 +57,12 @@ function SalesStatsPanel({ styles }) {
     )
   }
 
-  if (assignmentsError) {
+  if (error) {
     const errorMessage =
-      assignmentsError?.data?.detail ||
-      (typeof assignmentsError?.data === 'string' ? assignmentsError.data : '') ||
-      (assignmentsError?.status
-        ? `Request failed with status ${assignmentsError.status}.`
+      error?.data?.detail ||
+      (typeof error?.data === 'string' ? error.data : '') ||
+      (error?.status
+        ? `Request failed with status ${error.status}.`
         : 'Failed to load sales analytics.')
 
     return (
@@ -139,10 +82,10 @@ function SalesStatsPanel({ styles }) {
               Track what you sold, what remains assigned, and deposit activity.
             </p>
           </div>
-          {assignmentsFetching ? <span className='text-sm text-slate-400'>Refreshing...</span> : null}
+          {isFetching ? <span className='text-sm text-slate-400'>Refreshing...</span> : null}
         </div>
 
-        <div className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
+        <div className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6'>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Total Assigned</p>
             <p className='mt-2 text-2xl font-semibold'>{stats.totalAssigned}</p>
@@ -162,6 +105,11 @@ function SalesStatsPanel({ styles }) {
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Pending Acceptance</p>
             <p className='mt-2 text-2xl font-semibold'>{stats.pendingAcceptance}</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>Deposited Amount</p>
+            <p className='mt-2 text-2xl font-semibold'>{stats.totalAmount}</p>
+            <p className='text-xs text-slate-400'>Return rate: {stats.returnsRate}%</p>
           </div>
         </div>
 
@@ -198,13 +146,13 @@ function SalesStatsPanel({ styles }) {
                   <div key={item.name}>
                     <div className='flex items-center justify-between text-xs text-slate-300'>
                       <span>{item.name}</span>
-                      <span>{item.value}</span>
+                      <span>{item.sold}</span>
                     </div>
                     <div className='mt-1 h-2 rounded-full bg-slate-800/70'>
                       <div
                         className='h-2 rounded-full'
                         style={{
-                          width: `${(item.value / maxProductValue) * 100}%`,
+                          width: `${(item.sold / maxProductValue) * 100}%`,
                           backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
                         }}
                       />
@@ -242,7 +190,7 @@ function SalesStatsPanel({ styles }) {
                 ))}
               </div>
             )}
-            <p className='mt-3 text-xs text-slate-400'>Total deposited: {stats.totalDeposits}</p>
+            <p className='mt-3 text-xs text-slate-400'>Total deposited: {stats.totalAmount}</p>
           </div>
         </div>
       </div>

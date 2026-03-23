@@ -6,6 +6,7 @@ import {
   useReturnStockMutation,
   useSubmitSaleMutation,
 } from '../services/api'
+import { useToast } from './ToastProvider'
 
 const BANK_OPTIONS = [
   { value: 'CBE', label: 'CBE' },
@@ -30,6 +31,7 @@ function SalesAssignments({ styles, panelClass }) {
   const [openSaleForms, setOpenSaleForms] = useState({})
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
+  const { addToast } = useToast()
 
   const assignments = useMemo(() => {
     const list = Array.isArray(data) ? data : data?.results || []
@@ -52,8 +54,11 @@ function SalesAssignments({ styles, panelClass }) {
     try {
       await acceptAssignment({ product_id: assignment.product }).unwrap()
       setActionMessage(`Accepted assignment for ${assignment.product_name}.`)
+      addToast(`Accepted assignment for ${assignment.product_name}.`, { type: 'success' })
     } catch (apiError) {
-      setActionError(getApiErrorMessage(apiError, 'Failed to accept assignment.'))
+      const message = getApiErrorMessage(apiError, 'Failed to accept assignment.')
+      setActionError(message)
+      addToast(message, { type: 'error' })
     }
   }
 
@@ -63,8 +68,11 @@ function SalesAssignments({ styles, panelClass }) {
     try {
       await rejectAssignment({ product_id: assignment.product }).unwrap()
       setActionMessage(`Rejected assignment for ${assignment.product_name}. Stock restored.`)
+      addToast(`Rejected assignment for ${assignment.product_name}. Stock restored.`, { type: 'success' })
     } catch (apiError) {
-      setActionError(getApiErrorMessage(apiError, 'Failed to reject assignment.'))
+      const message = getApiErrorMessage(apiError, 'Failed to reject assignment.')
+      setActionError(message)
+      addToast(message, { type: 'error' })
     }
   }
 
@@ -86,10 +94,16 @@ function SalesAssignments({ styles, panelClass }) {
 
     try {
       await returnStock({ product_id: assignment.product, quantity: parsedQuantity }).unwrap()
-      setActionMessage(`Returned ${parsedQuantity} unit${parsedQuantity === 1 ? '' : 's'} of ${assignment.product_name}.`)
+      const successText = `Returned ${parsedQuantity} unit${
+        parsedQuantity === 1 ? '' : 's'
+      } of ${assignment.product_name}.`
+      setActionMessage(successText)
+      addToast(successText, { type: 'success' })
       setReturnQuantities((prev) => ({ ...prev, [assignment.id]: '' }))
     } catch (apiError) {
-      setActionError(getApiErrorMessage(apiError, 'Failed to return stock.'))
+      const message = getApiErrorMessage(apiError, 'Failed to return stock.')
+      setActionError(message)
+      addToast(message, { type: 'error' })
     }
   }
 
@@ -125,14 +139,18 @@ function SalesAssignments({ styles, panelClass }) {
         bank_name: bankName,
         quantity: parsedQuantity,
       }).unwrap()
-      setActionMessage(
-        `Submitted deposit for ${parsedQuantity} unit${parsedQuantity === 1 ? '' : 's'} of ${assignment.product_name} via ${bankName}.`,
-      )
+      const successText = `Submitted deposit for ${parsedQuantity} unit${
+        parsedQuantity === 1 ? '' : 's'
+      } of ${assignment.product_name} via ${bankName}.`
+      setActionMessage(successText)
+      addToast(successText, { type: 'success' })
       setSaleBanks((prev) => ({ ...prev, [assignment.id]: '' }))
       setSaleQuantities((prev) => ({ ...prev, [assignment.id]: '' }))
       setOpenSaleForms((prev) => ({ ...prev, [assignment.id]: false }))
     } catch (apiError) {
-      setActionError(getApiErrorMessage(apiError, 'Failed to submit sale.'))
+      const message = getApiErrorMessage(apiError, 'Failed to submit sale.')
+      setActionError(message)
+      addToast(message, { type: 'error' })
     }
   }
 

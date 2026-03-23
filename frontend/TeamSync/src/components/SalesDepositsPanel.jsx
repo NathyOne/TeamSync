@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { ACCESS_TOKEN_KEY } from '../config/appConfig'
+import { ACCESS_TOKEN_KEY, API_BASE_URL } from '../config/appConfig'
 import { useGetSalesDepositsQuery } from '../services/api'
+import { useToast } from './ToastProvider'
 
 function SalesDepositsPanel({ styles }) {
   const { data, error, isLoading, isFetching } = useGetSalesDepositsQuery()
@@ -9,6 +10,7 @@ function SalesDepositsPanel({ styles }) {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [exportError, setExportError] = useState('')
+  const { addToast } = useToast()
 
   const deposits = Array.isArray(data) ? data : data?.results || []
 
@@ -56,7 +58,7 @@ function SalesDepositsPanel({ styles }) {
     setExportError('')
     try {
       const token = window.sessionStorage.getItem(ACCESS_TOKEN_KEY)
-      const response = await fetch('http://localhost:9000/teamsync/app/stock/deposits/export/', {
+      const response = await fetch(`${API_BASE_URL}/app/stock/deposits/export/`, {
         headers: token ? { authorization: `JWT ${token}` } : {},
       })
       if (!response.ok) {
@@ -69,8 +71,10 @@ function SalesDepositsPanel({ styles }) {
       link.download = 'sales_deposits.csv'
       link.click()
       window.URL.revokeObjectURL(url)
+      addToast('Deposits exported successfully.', { type: 'success' })
     } catch {
       setExportError('Failed to export deposits.')
+      addToast('Failed to export deposits.', { type: 'error' })
     }
   }
 

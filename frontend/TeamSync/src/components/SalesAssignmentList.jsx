@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
-import { ACCESS_TOKEN_KEY } from '../config/appConfig'
+import { ACCESS_TOKEN_KEY, API_BASE_URL } from '../config/appConfig'
 import { useGetSalesAssignmentsQuery } from '../services/api'
+import { useToast } from './ToastProvider'
 
 function SalesAssignmentList({ styles }) {
   const { data, error, isLoading, isFetching } = useGetSalesAssignmentsQuery()
   const [exportError, setExportError] = useState('')
+  const { addToast } = useToast()
   const assignments = useMemo(() => {
     const list = Array.isArray(data) ? data : data?.results || []
     return list.filter((assignment) => assignment.quantity > 0)
@@ -14,7 +16,7 @@ function SalesAssignmentList({ styles }) {
     setExportError('')
     try {
       const token = window.sessionStorage.getItem(ACCESS_TOKEN_KEY)
-      const response = await fetch('http://localhost:9000/teamsync/app/stock/assignments/export/', {
+      const response = await fetch(`${API_BASE_URL}/app/stock/assignments/export/`, {
         headers: token ? { authorization: `JWT ${token}` } : {},
       })
       if (!response.ok) {
@@ -27,8 +29,10 @@ function SalesAssignmentList({ styles }) {
       link.download = 'sales_assignments.csv'
       link.click()
       window.URL.revokeObjectURL(url)
+      addToast('Assignments exported successfully.', { type: 'success' })
     } catch {
       setExportError('Failed to export assignments.')
+      addToast('Failed to export assignments.', { type: 'error' })
     }
   }
 

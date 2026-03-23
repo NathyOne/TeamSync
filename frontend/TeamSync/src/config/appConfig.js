@@ -1,6 +1,12 @@
 // BASE_URL = 'http://127.0.0.1:9000/teamsync'
+const fallbackApiBase = 'http://localhost:9000/teamsync'
+const fallbackAuthBase = 'http://localhost:9000/auth'
+
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || fallbackApiBase).replace(/\/$/, '')
+export const AUTH_BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL || fallbackAuthBase).replace(/\/$/, '')
+
 export const JWT_LOGIN_URL =
-  import.meta.env.VITE_JWT_LOGIN_URL
+  import.meta.env.VITE_JWT_LOGIN_URL || `${AUTH_BASE_URL}/jwt/create/`
 export const ACCESS_TOKEN_KEY =
   import.meta.env.VITE_ACCESS_TOKEN_KEY
 export const REFRESH_TOKEN_KEY =

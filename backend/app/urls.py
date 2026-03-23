@@ -3,6 +3,9 @@ from rest_framework_nested import routers
 from .views import (
     AcceptStockView,
     AssignStockView,
+    AuditLogListView,
+    AdminAnalyticsView,
+    CompanyOverviewView,
     ProductView,
     RejectStockView,
     ReturnStockView,
@@ -12,6 +15,7 @@ from .views import (
     SalesDepositListView,
     SalesDepositSelfListView,
     SalesDepositExportView,
+    SalesAnalyticsView,
     SubmitSaleView,
     StockMovementListView,
 )
@@ -45,4 +49,8 @@ urlpatterns = router.urls + [
     path("stock/deposits/", SalesDepositListView.as_view(), name="stock-deposit-list"),
     path("stock/deposits/export/", SalesDepositExportView.as_view(), name="stock-deposit-export"),
     path("stock/my-deposits/", SalesDepositSelfListView.as_view(), name="stock-deposit-self-list"),
+    path("audit-logs/", AuditLogListView.as_view(), name="audit-log-list"),
+    path("analytics/admin/", AdminAnalyticsView.as_view(), name="admin-analytics"),
+    path("analytics/sales/", SalesAnalyticsView.as_view(), name="sales-analytics"),
+    path("analytics/overview/", CompanyOverviewView.as_view(), name="company-overview"),
 ]

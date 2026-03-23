@@ -5,6 +5,7 @@ import {
   useUpdateUserMutation,
 } from '../services/api'
 import BadgePill from './BadgePill'
+import { useToast } from './ToastProvider'
 
 const ROLE_SECTIONS = [
   {
@@ -54,6 +55,7 @@ function ManageRoles({ styles, accentClass = '' }) {
   const [badgeEdits, setBadgeEdits] = useState({})
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
+  const { addToast } = useToast()
 
   const { data: usersData, error, isLoading, isFetching } = useGetUsersQuery()
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation()
@@ -101,12 +103,14 @@ function ManageRoles({ styles, accentClass = '' }) {
     try {
       await updateUser({ id: user.id, role: String(nextRole).toUpperCase() }).unwrap()
       setActionMessage(`Updated ${user.email} to ${nextRole}.`)
+      addToast(`Updated ${user.email} to ${nextRole}.`, { type: 'success' })
     } catch (apiError) {
       const message =
         apiError?.data?.detail ||
         (typeof apiError?.data === 'string' ? apiError.data : '') ||
         'Failed to update role.'
       setActionError(message)
+      addToast(message, { type: 'error' })
     }
   }
 
@@ -123,12 +127,14 @@ function ManageRoles({ styles, accentClass = '' }) {
     try {
       await updateUser({ id: user.id, badge: String(nextBadge).toUpperCase() }).unwrap()
       setActionMessage(`Updated ${user.email} badge to ${nextBadge}.`)
+      addToast(`Updated ${user.email} badge to ${nextBadge}.`, { type: 'success' })
     } catch (apiError) {
       const message =
         apiError?.data?.detail ||
         (typeof apiError?.data === 'string' ? apiError.data : '') ||
         'Failed to update badge.'
       setActionError(message)
+      addToast(message, { type: 'error' })
     }
   }
 
@@ -144,12 +150,14 @@ function ManageRoles({ styles, accentClass = '' }) {
     try {
       await deleteUser(user.id).unwrap()
       setActionMessage(`Deleted ${user.email}.`)
+      addToast(`Deleted ${user.email}.`, { type: 'success' })
     } catch (apiError) {
       const message =
         apiError?.data?.detail ||
         (typeof apiError?.data === 'string' ? apiError.data : '') ||
         'Failed to delete user.'
       setActionError(message)
+      addToast(message, { type: 'error' })
     }
   }
 

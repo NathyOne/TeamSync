@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import AdminShell from './AdminShell'
 import { useAddProductMutation } from '../services/api'
+import { useToast } from './ToastProvider'
 
 function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
   const [name, setName] = useState('')
@@ -9,6 +10,7 @@ function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
   const [formError, setFormError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [addProduct, { isLoading, error }] = useAddProductMutation()
+  const { addToast } = useToast()
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -37,11 +39,16 @@ function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
     try {
       await addProduct({ name: trimmedName, quantity: parsedQuantity, price: parsedPrice }).unwrap()
       setSuccessMessage('Product added successfully.')
+      addToast('Product added successfully.', { type: 'success' })
       setName('')
       setQuantity('')
       setPrice('')
-    } catch {
-      // Error text is handled in the UI using RTK Query error object.
+    } catch (apiError) {
+      const message =
+        apiError?.data?.detail ||
+        (typeof apiError?.data === 'string' ? apiError.data : '') ||
+        'Failed to add product. Please try again.'
+      addToast(message, { type: 'error' })
     }
   }
 

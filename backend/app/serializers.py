@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import Product, SalesAssignment, SalesDeposit, StockMovement
+from .models import AuditLog, Product, SalesAssignment, SalesDeposit, StockMovement
 
 User = get_user_model()
 
@@ -12,6 +12,21 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ["id", "name", "quantity", "price", "reorder_threshold"]
+
+    def validate_quantity(self, value):
+        if value is None or value < 0:
+            raise serializers.ValidationError("Quantity must be greater than or equal to 0.")
+        return value
+
+    def validate_price(self, value):
+        if value is None or value < 0:
+            raise serializers.ValidationError("Price must be greater than or equal to 0.")
+        return value
+
+    def validate_reorder_threshold(self, value):
+        if value is None or value < 0:
+            raise serializers.ValidationError("Reorder threshold must be greater than or equal to 0.")
+        return value
 
 
 class SalesAssignmentSerializer(serializers.ModelSerializer):
@@ -84,6 +99,37 @@ class StockMovementSerializer(serializers.ModelSerializer):
         ]
 
 
+class AuditLogSerializer(serializers.ModelSerializer):
+    actor_email = serializers.EmailField(source="actor.email", read_only=True)
+    target_email = serializers.EmailField(source="target_user.email", read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            "id",
+            "event_type",
+            "actor",
+            "actor_email",
+            "target_user",
+            "target_email",
+            "product",
+            "product_name",
+            "assignment",
+            "deposit",
+            "quantity",
+            "metadata",
+            "created_at",
+        ]
+        read_only_fields = [
+            "id",
+            "actor_email",
+            "target_email",
+            "product_name",
+            "metadata",
+            "created_at",
+        ]
+
 class AssignStockSerializer(serializers.Serializer):
     salesperson_id = serializers.PrimaryKeyRelatedField(
         source="salesperson",
@@ -146,6 +192,18 @@ class AssignStockSerializer(serializers.Serializer):
             movement_type=StockMovement.ASSIGN,
             quantity=quantity,
             created_by=created_by,
+        )
+        AuditLog.objects.create(
+            event_type=AuditLog.STOCK_ASSIGN,
+            actor=created_by,
+            target_user=salesperson,
+            product=product,
+            assignment=assignment,
+            quantity=quantity,
+            metadata={
+                "total_assigned": assignment.total_assigned,
+                "remaining_quantity": assignment.quantity,
+            },
         )
         return assignment
 
@@ -215,6 +273,18 @@ class ReturnStockSerializer(serializers.Serializer):
             movement_type=StockMovement.RETURN,
             quantity=quantity,
             created_by=created_by,
+        )
+        AuditLog.objects.create(
+            event_type=AuditLog.STOCK_RETURN,
+            actor=salesperson,
+            target_user=salesperson,
+            product=product,
+            assignment=assignment,
+            quantity=quantity,
+            metadata={
+                "remaining_quantity": assignment.quantity,
+                "total_returned": assignment.total_returned,
+            },
         )
         return assignment
 
@@ -312,6 +382,19 @@ class SubmitSaleSerializer(serializers.Serializer):
             total_amount=total_amount,
             bank_name=validated_data["bank_name"],
         )
+        AuditLog.objects.create(
+            event_type=AuditLog.SALES_DEPOSIT,
+            actor=salesperson,
+            target_user=salesperson,
+            product=product,
+            assignment=assignment,
+            deposit=deposit,
+            quantity=quantity,
+            metadata={
+                "bank_name": deposit.bank_name,
+                "total_amount": str(deposit.total_amount),
+            },
+        )
         return deposit
 
 
@@ -345,6 +428,14 @@ class AcceptStockSerializer(serializers.Serializer):
         assignment = validated_data["assignment"]
         assignment.is_accepted = True
         assignment.save(update_fields=["is_accepted", "updated_at"])
+        AuditLog.objects.create(
+            event_type=AuditLog.ASSIGN_ACCEPT,
+            actor=assignment.salesperson,
+            target_user=assignment.salesperson,
+            product=assignment.product,
+            assignment=assignment,
+            quantity=assignment.quantity,
+        )
         return assignment
 
 
@@ -404,6 +495,18 @@ class RejectStockSerializer(serializers.Serializer):
             movement_type=StockMovement.RETURN,
             quantity=quantity,
             created_by=created_by,
+        )
+        AuditLog.objects.create(
+            event_type=AuditLog.ASSIGN_REJECT,
+            actor=salesperson,
+            target_user=salesperson,
+            product=product,
+            assignment=assignment,
+            quantity=quantity,
+            metadata={
+                "total_returned": assignment.total_returned,
+                "was_accepted": False,
+            },
         )
         return assignment
         

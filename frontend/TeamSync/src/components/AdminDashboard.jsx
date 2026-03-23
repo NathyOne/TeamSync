@@ -9,6 +9,7 @@ import SalesDepositsPanel from './SalesDepositsPanel'
 import StockMovementsPanel from './StockMovementsPanel'
 import LowStockAlerts from './LowStockAlerts'
 import ReturnNotifications from './ReturnNotifications'
+import AuditLogPanel from './AuditLogPanel'
 
 function AdminDashboard({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
   const [searchParams] = useSearchParams()
@@ -40,7 +41,14 @@ function AdminDashboard({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
       return <SalesDepositsPanel styles={styles} />
     }
     if (activeView === 'audit') {
-      return <StockMovementsPanel styles={styles} />
+      return (
+        <>
+          <AuditLogPanel styles={styles} />
+          <div className='mt-8'>
+            <StockMovementsPanel styles={styles} />
+          </div>
+        </>
+      )
     }
     if (activeView === 'returns') {
       return <ReturnNotifications styles={styles} />

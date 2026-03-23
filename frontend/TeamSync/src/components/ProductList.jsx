@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { API_BASE_URL } from '../config/appConfig'
 import { useGetProductsQuery } from '../services/api'
 
 function ProductList({ className = '', variant = 'card', title = 'Products' }) {
@@ -25,7 +26,7 @@ function ProductList({ className = '', variant = 'card', title = 'Products' }) {
     return (
       <div className='p-4 text-red-600'>
         <p>Failed to load products.</p>
-        <p className='text-sm'>Check backend is running on http://localhost:9000</p>
+        <p className='text-sm'>Check backend is running on {API_BASE_URL.replace('/teamsync', '')}</p>
       </div>
     )
   }

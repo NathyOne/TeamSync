@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import AdminShell from './AdminShell'
 import { useAssignStockMutation, useGetProductsQuery, useGetUsersQuery } from '../services/api'
+import { useToast } from './ToastProvider'
 
 function AssignStock({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
   const [productId, setProductId] = useState('')
@@ -8,6 +9,7 @@ function AssignStock({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
   const [quantity, setQuantity] = useState('')
   const [formError, setFormError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const { addToast } = useToast()
 
   const {
     data: productsData,
@@ -65,14 +67,24 @@ function AssignStock({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
         salesperson_id: Number(salespersonId),
         quantity: parsedQuantity,
       }).unwrap()
-      setSuccessMessage(
-        `Assigned ${parsedQuantity} unit${parsedQuantity === 1 ? '' : 's'} of ${
-          selectedProduct?.name || 'the product'
-        } to ${selectedSalesUser?.email || 'sales user'}.`,
-      )
+      const successText = `Assigned ${parsedQuantity} unit${
+        parsedQuantity === 1 ? '' : 's'
+      } of ${selectedProduct?.name || 'the product'} to ${
+        selectedSalesUser?.email || 'sales user'
+      }.`
+
+      setSuccessMessage(successText)
+      addToast(successText, { type: 'success' })
       setQuantity('')
-    } catch {
-      // Error text is handled in the UI using RTK Query error object.
+    } catch (apiError) {
+      const message =
+        apiError?.data?.detail ||
+        apiError?.data?.quantity?.[0] ||
+        apiError?.data?.product_id?.[0] ||
+        apiError?.data?.salesperson_id?.[0] ||
+        (typeof apiError?.data === 'string' ? apiError.data : '') ||
+        'Failed to assign stock. Please try again.'
+      addToast(message, { type: 'error' })
     }
   }
 
