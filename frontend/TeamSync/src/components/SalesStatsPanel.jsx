@@ -182,7 +182,7 @@ function SalesStatsPanel({ styles }) {
                         className='h-2 rounded-full'
                         style={{
                           width: `${(item.amount / maxBankValue) * 100}%`,
-                          backgroundColor: CHARnpm run devT_COLORS[(index + 3) % CHART_COLORS.length],
+                          backgroundColor: CHART_COLORS[(index + 3) % CHART_COLORS.length],
                         }}
                       />
                     </div>
