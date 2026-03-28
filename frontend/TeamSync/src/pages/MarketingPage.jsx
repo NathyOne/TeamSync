@@ -23,7 +23,7 @@ function MarketingPage({ onLogout, onToggleTheme, styles, themeButtonLabel, user
           className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${styles.dashboardHeader}`}
         >
           <div>
-            <p className={`text-sm uppercase tracking-[0.28em] ${styles.eyebrow}`}>TeamSync Dashboard</p>
+            <p className={`text-sm uppercase tracking-[0.28em] ${styles.eyebrow}`}>Sales Management System Dashboard</p>
             <h1 className='mt-2 text-3xl font-bold'>{marketingConfig.label} Portal</h1>
             <p className={`mt-1 ${styles.dashboardSubtext}`}>{marketingConfig.headline}</p>
             {userBadge ? (

@@ -26,7 +26,7 @@ function ProductList({ className = '', variant = 'card', title = 'Products' }) {
     return (
       <div className='p-4 text-red-600'>
         <p>Failed to load products.</p>
-        <p className='text-sm'>Check backend is running on {API_BASE_URL.replace('/teamsync', '')}</p>
+        <p className='text-sm'>Check backend is running on {API_BASE_URL.replace('/sales-management-system', '')}</p>
       </div>
     )
   }

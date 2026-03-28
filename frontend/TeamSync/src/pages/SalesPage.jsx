@@ -37,7 +37,7 @@ function SalesPage({ onLogout, onToggleTheme, styles, themeButtonLabel, userBadg
   return (
     <SalesShell
       activeSection={activeView}
-      eyebrow='TeamSync Dashboard'
+      eyebrow='Sales Management System Dashboard'
       onLogout={handleLogout}
       onToggleTheme={onToggleTheme}
       styles={styles}

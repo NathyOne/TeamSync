@@ -1,5 +1,5 @@
-// BASE_URL = 'http://127.0.0.1:9000/teamsync'
-const fallbackApiBase = 'http://localhost:9000/teamsync'
+// BASE_URL = 'http://127.0.0.1:9000/sales-management-system'
+const fallbackApiBase = 'http://localhost:9000/sales-management-system'
 const fallbackAuthBase = 'http://localhost:9000/auth'
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || fallbackApiBase).replace(/\/$/, '')
@@ -11,7 +11,7 @@ export const ACCESS_TOKEN_KEY =
   import.meta.env.VITE_ACCESS_TOKEN_KEY
 export const REFRESH_TOKEN_KEY =
   import.meta.env.VITE_REFRESH_TOKEN_KEY
-export const USER_BADGE_KEY = 'teamsync-user-badge'
+export const USER_BADGE_KEY = 'sales-management-system-user-badge'
 
 export const BACKEND_ROLE_TO_APP_ROLE = {
   ADMIN: 'admin',
@@ -79,8 +79,8 @@ export const ROLE_CONFIG = {
 
 export const ROLE_ORDER = ['admin', 'sales', 'support', 'marketing']
 
-export const SESSION_KEY = 'teamsync-role'
-export const THEME_KEY = 'teamsync-theme'
+export const SESSION_KEY = 'sales-management-system-role'
+export const THEME_KEY = 'sales-management-system-theme'
 
 export const THEME_CLASSES = {
   dark: {

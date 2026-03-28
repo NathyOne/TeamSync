@@ -1,1 +1,1 @@
-# TeamSync
+# Sales Management System

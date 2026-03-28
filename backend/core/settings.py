@@ -101,7 +101,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('DB_NAME', 'TeamSync'),
+            'NAME': os.environ.get('DB_NAME', 'sales_management_system'),
             'HOST': os.environ.get('DB_HOST', 'localhost'),
             'USER': os.environ.get('DB_USER', 'root'),
             'PASSWORD': os.environ.get('DB_PASSWORD', 'root'),
@@ -164,4 +164,3 @@ CSRF_TRUSTED_ORIGINS = [
 
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-

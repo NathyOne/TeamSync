@@ -12,7 +12,7 @@ function ManageRolesPage({ onLogout, onToggleTheme, styles, themeButtonLabel }) 
   return (
     <AdminShell
       activeSection='manage-roles'
-      eyebrow='TeamSync Dashboard'
+      eyebrow='Sales Management System Dashboard'
       onLogout={onLogout}
       onToggleTheme={onToggleTheme}
       styles={styles}

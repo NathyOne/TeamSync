@@ -63,7 +63,7 @@ function AdminDashboard({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
   return (
     <AdminShell
       activeSection={activeView}
-      eyebrow='TeamSync Dashboard'
+      eyebrow='Sales Management System Dashboard'
       onLogout={onLogout}
       onToggleTheme={onToggleTheme}
       styles={styles}

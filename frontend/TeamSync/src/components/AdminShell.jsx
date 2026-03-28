@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminNotifications from './AdminNotifications'
 
-const SIDEBAR_STORAGE_KEY = 'teamsync-admin-sidebar'
+const SIDEBAR_STORAGE_KEY = 'sales-management-system-admin-sidebar'
 
 function AdminShell({
   activeSection,
   children,
-  eyebrow = 'TeamSync Dashboard',
+  eyebrow = 'Sales Management System Dashboard',
   onLogout,
   onToggleTheme,
   styles,

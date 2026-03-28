@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BadgePill from './BadgePill'
 
-const SIDEBAR_STORAGE_KEY = 'teamsync-sales-sidebar'
+const SIDEBAR_STORAGE_KEY = 'sales-management-system-sales-sidebar'
 
 function SalesShell({
   activeSection,
   children,
-  eyebrow = 'TeamSync Dashboard',
+  eyebrow = 'Sales Management System Dashboard',
   onLogout,
   onToggleTheme,
   styles,

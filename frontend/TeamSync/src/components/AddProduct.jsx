@@ -60,7 +60,7 @@ function AddProduct({ onLogout, onToggleTheme, styles, themeButtonLabel }) {
   return (
     <AdminShell
       activeSection='create-product'
-      eyebrow='TeamSync Dashboard'
+      eyebrow='Sales Management System Dashboard'
       onLogout={onLogout}
       onToggleTheme={onToggleTheme}
       styles={styles}

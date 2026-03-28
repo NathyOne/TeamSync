@@ -19,10 +19,8 @@ from django.urls import path, include, re_path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('teamsync/app/', include('app.urls')),
-    path('teamsync/user/', include('user.urls')),
+    path('sales-management-system/app/', include('app.urls')),
+    path('sales-management-system/user/', include('user.urls')),
     re_path(r'^auth/', include('djoser.urls')),
     re_path(r'^auth/', include('djoser.urls.jwt')),
-
-
 ]

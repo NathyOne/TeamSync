@@ -27,7 +27,7 @@ function LoginPage({ onLogin, onToggleTheme, styles, themeButtonLabel }) {
       <div className='mx-auto grid w-full max-w-3xl gap-8'>
         <section className={styles.loginCard}>
           <div className='flex items-center justify-between gap-3'>
-            <p className='text-sm uppercase tracking-[0.3em] text-emerald-400'>TeamSync</p>
+            <p className='text-sm uppercase tracking-[0.3em] text-emerald-400'>Sales Management System</p>
             <button className={styles.utilityButton} onClick={onToggleTheme} type='button'>
               {themeButtonLabel}
             </button>
