@@ -40,7 +40,7 @@ function LoginPage({ onLogin, onToggleTheme, styles, themeButtonLabel }) {
             </span> */}
           </h1>
           <p className={`mt-5 ${styles.mutedText}`}>
-            Sign in with your email and password. Routing happens automatically from your server role.
+            Sign in and make your job easier.
           </p>
 
           <form className='mt-8 space-y-4' onSubmit={handleSubmit}>
